@@ -30,8 +30,8 @@ const target_ttml = computed(() => {
 
   // 构造正则：匹配翻译行并捕获整个标签
   const translationRegex = source_ttml.value.indexOf("iTunesMetadata") != -1
-      ? /(<translation\s+type="(subtitle|replacement)"\s+xml:lang="([^"]+)"[^>]*>[\s\S]*?<\/span>)/g
-      : /(<translation\s+ttm:role="x-translation"\s+xml:lang="([^"]+)"[^>]*>[\s\S]*?<\/span>)/g;
+      ? /(<translation\s+type="(subtitle|replacement)"\s+xml:lang="([^"]+)"[^>]*>[\s\S]*?<\/translation>)/g
+      : /(<span\s+ttm:role="x-translation"\s+xml:lang="([^"]+)"[^>]*>[\s\S]*?<\/span>)/g;
 
   return source_ttml.value.replace(translationRegex, (_, fullTag, lang) => {
     // 保留选中的语言或非翻译行
