@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import {computed, ref} from "vue";
 // import { invoke } from "@tauri-apps/api/core";
-import { NCheckbox, NCheckboxGroup, NSplit, NSpace, NInput } from "naive-ui";
+import { NCheckbox, NCheckboxGroup, NSplit, NSpace, NInput, NButton, NIcon } from "naive-ui";
+import { CopyOutline } from '@vicons/ionicons5'
+import {writeText} from "@tauri-apps/plugin-clipboard-manager";
 
 const selected_langs = ref<string[]>([]);
 const source_ttml = ref("")
+
+const show_button = ref(false)
 
 // 计算属性：从source_ttml中提取语言标签并去重
 const langs = computed(() => {
   if (!source_ttml.value) return [];
 
   // 使用正则匹配所有 xml:lang="xx-XX" 格式的字符串
-  const langRegex = /(?<!\<tt[^\<\>]+)xml:lang="([^"]+)"/g;
+  const langRegex = /(?<!<tt[^<>]+)xml:lang="([^"]+)"/g;
   const matches = source_ttml.value.matchAll(langRegex);
 
   // 提取匹配结果并去重
@@ -68,13 +72,22 @@ const target_ttml = computed(() => {
         </div>
       </template>
       <template #2>
-        <div id="target">
+        <div id="target" style="position: relative;"
+             @mouseleave="show_button = false"
+             @mouseover="show_button = true">
           <n-input
               v-model:value="target_ttml"
               type="textarea"
               placeholder="粘贴 TTML 到这里"
               autosize
           />
+          <n-button id="copy" v-if="show_button" type="primary" size="tiny" @click="writeText(target_ttml)" text>
+            <template #icon>
+              <n-icon>
+                <CopyOutline/>
+              </n-icon>
+            </template>
+          </n-button>
         </div>
       </template>
     </n-split>
@@ -101,7 +114,7 @@ html, body, #app, #main > div:not(:first-child) {
 #lang {
   line-height: 1.4em;
 }
-#source, #target, :is(#source, #target) * {
+#source, #target, :is(#source, #target) .n-input {
   height: 100%;
 }
 :is(#source, #target) textarea {
@@ -113,5 +126,10 @@ html, body, #app, #main > div:not(:first-child) {
   word-wrap: break-word;
   white-space: pre-wrap;
   height: 100%;
+}
+#copy {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
 }
 </style>
