@@ -11,7 +11,7 @@ const langs = computed(() => {
   if (!source_ttml.value) return [];
 
   // 使用正则匹配所有 xml:lang="xx-XX" 格式的字符串
-  const langRegex = /xml:lang="([^"]+)"/g;
+  const langRegex = /(?<!\<tt[^\<\>]+)xml:lang="([^"]+)"/g;
   const matches = source_ttml.value.matchAll(langRegex);
 
   // 提取匹配结果并去重
@@ -28,15 +28,23 @@ const target_ttml = computed(() => {
     return source_ttml.value;
   }
 
-  // 构造正则：匹配翻译行并捕获整个标签
-  const translationRegex = source_ttml.value.indexOf("iTunesMetadata") != -1
-      ? /(<translation\s+type="(subtitle|replacement)"\s+xml:lang="([^"]+)"[^>]*>[\s\S]*?<\/translation>)/g
-      : /(<span\s+ttm:role="x-translation"\s+xml:lang="([^"]+)"[^>]*>[\s\S]*?<\/span>)/g;
+  if (source_ttml.value.indexOf("iTunesMetadata") != -1) {
+    // 构造正则：匹配翻译行并捕获整个标签
+    const translationRegex = /(<(translation|transliteration)(\s+type="(subtitle|replacement)")?\s+xml:lang="([^"]+)"[^>]*>(<text for="L\d+">[\s\S]*?<\/text>)+<\/(translation|transliteration)>)/g;
 
-  return source_ttml.value.replace(translationRegex, (_, fullTag, lang) => {
-    // 保留选中的语言或非翻译行
-    return selected_langs.value.includes(lang) ? fullTag : "";
-  });
+    return source_ttml.value.replace(translationRegex, (_, fullTag, _tag, _attr, _type, lang) => {
+      // 保留选中的语言或非翻译行
+      return selected_langs.value.includes(lang) ? fullTag : "";
+    });
+  } else {
+    // 构造正则：匹配翻译行并捕获整个标签
+    const translationRegex = /(<span\s+ttm:role="x-translation"\s+xml:lang="([^"]+)"[^>]*>[\s\S]*?<\/span>)/g;
+
+    return source_ttml.value.replace(translationRegex, (_, fullTag, lang) => {
+      // 保留选中的语言或非翻译行
+      return selected_langs.value.includes(lang) ? fullTag : "";
+    });
+  }
 });
 </script>
 
@@ -55,6 +63,7 @@ const target_ttml = computed(() => {
               v-model:value="source_ttml"
               type="textarea"
               placeholder="粘贴 TTML 到这里"
+              autosize
           />
         </div>
       </template>
@@ -64,6 +73,7 @@ const target_ttml = computed(() => {
               v-model:value="target_ttml"
               type="textarea"
               placeholder="粘贴 TTML 到这里"
+              autosize
           />
         </div>
       </template>
@@ -84,8 +94,9 @@ html, body, #app, #main > div:not(:first-child) {
 }
 #main {
   width: calc(100% - 40px);
-  height: calc(100% - 40px);
+  height: calc(100% - 100px);
   padding: 20px;
+  justify-content: space-between;
 }
 #lang {
   line-height: 1.4em;
